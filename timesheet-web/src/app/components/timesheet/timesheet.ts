@@ -14,7 +14,7 @@ import { Router } from '@angular/router';
 export class TimesheetComponent {
   timesheetForm: FormGroup;
   fetchForm: FormGroup;
-
+  lastLoginExists = false;
   message: string = '';
   todayRecord: any = null;
   dayRecord: any = null;
@@ -50,9 +50,15 @@ export class TimesheetComponent {
     data.loginTime = data.loginTime?.trim() || null;
     data.logoutTime = data.logoutTime?.trim() || null;
 
-    // Make sure both aren't filled
+
     if (data.loginTime && data.logoutTime) {
       this.message = 'Cannot submit login and logout together';
+      return;
+    }
+
+    if (data.logoutTime && !data.loginTime && !this.lastLoginExists) {
+
+      this.message = 'You cannot logout before logging in.';
       return;
     }
 
@@ -60,9 +66,16 @@ export class TimesheetComponent {
       next: () => {
         this.message = 'Timesheet submitted successfully!';
         this.timesheetForm.reset();
+        this.lastLoginExists = !!data.loginTime;
       },
       error: (err) => {
-
+        if (
+          err.error?.message === 'You cannot logout before logging in.' ||
+          err.error === 'You cannot logout before logging in.'
+        ) {
+          this.message = 'You cannot logout before logging in.';
+          return;
+        }
         this.message = err.error?.message || err.error?.error || 'Error submitting timesheet';
       }
     });

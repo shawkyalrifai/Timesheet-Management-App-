@@ -36,17 +36,28 @@ public class TimesheetService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         LocalDate date = DateTimeUtils.parseDate(req.getDate());
-
-        Timesheet timesheet = timesheetRepository.findByUserAndDate(user, date)
-                .orElseGet(Timesheet::new);
+        Optional<Timesheet> existingOpt = timesheetRepository.findByUserAndDate(user, date);
+        Timesheet timesheet = existingOpt.orElseGet(Timesheet::new);
 
         timesheet.setUser(user);
         timesheet.setDate(date);
 
         if (req.getLoginTime() != null && !req.getLoginTime().isEmpty()) {
+            if (existingOpt.isPresent() && timesheet.getLoginTime() != null) {
+                throw new IllegalArgumentException("You already logged in today.");
+            }
             timesheet.setLoginTime(DateTimeUtils.parseToDateTime(date, req.getLoginTime()));
         }
+
         if (req.getLogoutTime() != null && !req.getLogoutTime().isEmpty()) {
+            if (!existingOpt.isPresent() || timesheet.getLoginTime() == null) {
+                throw new IllegalArgumentException("You cannot logout before logging in.");
+            }
+
+            if (timesheet.getLogoutTime() != null) {
+                throw new IllegalArgumentException("You have already logged out today.");
+            }
+
             timesheet.setLogoutTime(DateTimeUtils.parseToDateTime(date, req.getLogoutTime()));
         }
 
@@ -54,6 +65,8 @@ public class TimesheetService {
         logger.info("submit() saved for {} date {}", user.getEmail(), date);
         return saved;
     }
+
+
 
     public Optional<Timesheet> getForDay(String email, LocalDate date) {
         logger.info("getForDay() called");

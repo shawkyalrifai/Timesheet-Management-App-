@@ -77,20 +77,26 @@
       </form>
     </div>
   </div>
-
   <!-- Alerts -->
   <div class="mt-4" *ngIf="message">
     <div
       class="alert text-center fw-semibold"
       [ngClass]="{
-        'alert-success': message.includes('success'),
-        'alert-warning': message.includes('Cannot'),
-        'alert-danger': message.includes('Error')
+        'alert-success': message.toLowerCase().includes('success'),
+        'alert-danger': message.toLowerCase().includes('error') || message.toLowerCase().includes('cannot logout before logging in'),
+        'alert-warning': message.toLowerCase().includes('cannot') && !message.toLowerCase().includes('logout')
       }"
+      style="border-left: 6px solid red; font-size: 1.05rem;"
     >
-      {{ message }}
+      <span *ngIf="message.toLowerCase().includes('cannot logout before logging in')" class="text-danger">
+          {{ message }}
+      </span>
+      <span *ngIf="!message.toLowerCase().includes('cannot logout before logging in')">
+        {{ message }}
+      </span>
     </div>
   </div>
+
 
   <!-- Records -->
   <div *ngIf="todayRecord || dayRecord" class="mt-4">
